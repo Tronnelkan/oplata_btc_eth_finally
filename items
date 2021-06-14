@@ -1,0 +1,37 @@
+from dataclasses import dataclass
+
+
+@dataclass  # клас товара
+class Item:
+    id: int
+    title: str
+    description: str
+    price_BTC: int
+    price_ETH: int
+    photo_link = str
+
+
+Primer_1 = Item(
+    id=1,  # id товара
+    title='Назва товара',  # назва товара
+    description="""
+        Опис товару
+        """,
+    price_BTC=10_000_000,  # прайс в біткоїнах
+    price_ETH=10_000_000,  # прайс в ефириумах
+    # photo_link=''  # ссилка на фото
+)
+
+# Primer_2 = Item(
+#     id=2,
+#     title='Назва товара',
+#     description="""
+#     Опис товару
+#     """,
+#     price=100_000_000,
+#     photo_link='Ссилка на картинку'
+# )
+
+items = (
+    Primer_1,  # Primer_2   #
+)
