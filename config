@@ -1,0 +1,30 @@
+import os
+
+BOT_TOKEN = ''  # токен бота
+BLOCKCYPHER_TOKEN = ''  # токен API блосайфера
+WALLET_BTC = ''  # кошелек біткоїна
+REQUEST_LINK_BTC = 'bitcoin:{address}?' \
+                   'amount={amount}' \
+                   '&label={message}'
+WALLET_ETH = ''  # кошелек Ethereum
+REQUEST_LINK_ETH = 'ethereum:{address}?' \
+                   'amount={amount}' \
+                   '&label={message}'
+# WALLET_LTC = ''  # кошелек Litecoin
+# REQUEST_LINK_LTC = 'litecoin:{address}?' \
+#                    'amount={amount}' \
+#                    '&label={message}'
+# WALLET_DOGE = ''  # кошелек DogeCoin
+# REQUEST_LINK_DOGE = 'dogecoin:{address}?' \
+#                     'amount={amount}' \
+#                     '&label={message}'
+
+admins = [
+    # ID админа, int
+]
+
+ip = os.getenv('ip')
+
+aiogram_redis = {
+    'host': ip,
+}
