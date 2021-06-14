@@ -1,0 +1,60 @@
+from dataclasses import dataclass
+from datetime import datetime
+
+import blockcypher as bs
+from dateutil.tz import tzutc
+
+from data import config
+
+
+class AddressDetails_eth:
+    def __init__(self,
+                 address_eth: str,
+                 total_received_eth: int,
+                 total_sent_eth: int,
+                 balance_eth: int,
+                 unconfirmed_balance_eth: int,
+                 uncofirmed_txrefs_eth: list,
+                 txrefs_eth: list,
+                 **kwargs):
+        self.address_eth = address_eth
+        self.total_recieved_eth = total_received_eth
+        self.total_sent_eth = total_sent_eth
+        self.balance_eth = balance_eth
+        self.unconfirmed_balance_eth = unconfirmed_balance_eth
+        self.unconfirmed_txrefs_eth = uncofirmed_txrefs_eth
+        self.txrefs_eth = txrefs_eth
+
+
+class NotConfirmed_eth(Exception):
+    pass
+
+
+class NoPaymentFound_eth(Exception):
+    pass
+
+
+@dataclass
+class Payment_eth:
+    amount_eth: int
+    created_eth: datetime = None
+    success_eth: bool = False
+
+    def create_eth(self):
+        self.created_eth = datetime.now(tz=tzutc())
+
+    def check_payment_eth(self):
+        details_eth = bs.get_address_details(address=config.WALLET_ETH, api_key=config.BLOCKCYPHER_TOKEN)
+        address_details_eth = AddressDetails_eth(**details_eth)
+        for transaction_eth in address_details_eth.unconfirmed_txrefs_eth:
+            if transaction_eth.get('value_eth') == self.amount_eth:
+                if transaction_eth.get('received_eth') > self.created_eth:
+                    if transaction_eth.get('confirmations_eth') > 0:
+                        return True
+                    else:
+                        raise NotConfirmed_eth
+        for transaction_eth_2 in address_details_eth.txrefs_eth:
+            if transaction_eth_2.get('value_eth') == self.amount_eth:
+                if transaction_eth_2.get('received_eth') > self.created_eth:
+                    return True
+        raise NoPaymentFound_eth
