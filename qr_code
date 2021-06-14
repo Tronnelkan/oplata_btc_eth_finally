@@ -1,0 +1,15 @@
+import pyqrcode
+
+
+def qr_link_btc(link):
+    qr_btc = pyqrcode.create(link, 'L')
+    qr_btc.png('documents/qr_post_link_btc.png', scale=6)
+    file_btc = open('documents/qr_post_link_btc.png', 'rb')
+    return file_btc
+
+
+def qr_link_eth(link):
+    qr_eth = pyqrcode.create(link, 'L')
+    qr_eth.png('documents/qr_post_link_eth.png', scale=6)
+    file_eth = open('documents/qr_post_link_eth.png', 'rb')
+    return file_eth
