@@ -1,0 +1,83 @@
+from random import randint
+
+from aiogram.utils.markdown import hcode
+from blockcypher import from_base_unit, wei_to_ether
+from aiogram import types
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Command
+
+from data import config
+from data.items import items
+from keyboards.inline.purchases import buy_keyboard, paid_keyboard_eth
+from loader import dp
+from utils.misc.bitcoin_payments import Payment
+from utils.misc.ethereum_payments import NotConfirmed_eth, NoPaymentFound_eth
+from utils.misc.qr_code import qr_link_eth
+
+
+@dp.message_handler(Command('Buy_eth'))
+async def show_items(message: types.Message):
+    caption = """
+    Названия продукта: {title}
+    <i>Описания:</i>
+    {description}
+
+    <u>Цена:</u> {price:.8f} <b>ETH</b>
+    """
+    for item in items:
+        await message.answer_photo(
+            photo=item.photo_link,
+            caption=caption.format(
+                title=item.title,
+                description=item.description,
+                price_ETH=item.price_ETH,
+            ),
+            reply_markup=buy_keyboard(item_id=item.id)
+        )
+
+
+@dp.callback_query_handler(text_contains='buy_eth')
+async def create_invoice(call: types.CallbackQuery, state: FSMContext):
+    await call.answer(cache_time=60)
+    item_id_eth = call.data.split(':')[-1]
+    item_id_eth = int(item_id_eth) - 1
+    item = items[item_id_eth]
+
+    amount_eth = item.price_ETH + randint(10, 60)
+    payment_eth = Payment(amount=amount_eth)
+    payment_eth.create()
+
+    show_amount_eth = wei_to_ether(from_base_unit(payment_eth.amount, 'eth'))
+    await call.message.answer(f'Оплатите {show_amount_eth:.8f} по адресу:\n\n' +
+                              hcode(config.WALLET_ETH),
+                              reply_markup=paid_keyboard_eth)
+    qr_code = config.REQUEST_LINK_BTC.format(adress=config.WALLET_ETH,
+                                             amount=show_amount_eth,
+                                             message='test')  # Назначения платежа, видно только самому пользователю
+    await call.message.answer_photo(photo=qr_link_eth(qr_code))
+    await state.set_state('eth')
+    await state.update_data(payment=payment_eth)
+
+
+@dp.callback_query_handler(text='cancel', state='eth')
+async def cancel_payment_eth(call: types.CallbackQuery, state: FSMContext):
+    await call.message.answer('Отмена')
+    await state.finish()
+
+
+@dp.callback_query_handler(text='paid_eth', state='eth')
+async def approve_payment(call: types.CallbackQuery, state: FSMContext):
+    data_eth = await state.get_data()
+    payment_eth = data_eth.get('payment_eth')
+    try:
+        payment_eth.check_payment_eth()
+    except NotConfirmed_eth:
+        await call.message.answer('Транзакция найдена, но еще не потверждена. Попробуйте позже')
+        return
+    except NoPaymentFound_eth:
+        await call.message.answer('Транзакция не найдена')
+        return
+    else:
+        await call.message.answer('Успешно оплачено')
+    await call.message.delete_reply_markup()
+    await state.finish()
